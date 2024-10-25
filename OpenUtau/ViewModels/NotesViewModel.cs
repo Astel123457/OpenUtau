@@ -92,7 +92,7 @@ namespace OpenUtau.App.ViewModels {
         public ReactiveCommand<int, Unit> SetKeyCommand { get; set; }
 
         // See the comments on TracksViewModel.playPosXToTickOffset
-        private double playPosXToTickOffset => ViewportTicks / Bounds.Width;
+        private double playPosXToTickOffset => Bounds.Width != 0 ? ViewportTicks / Bounds.Width : 0;
 
         private readonly ObservableAsPropertyHelper<double> viewportTicks;
         private readonly ObservableAsPropertyHelper<double> viewportTracks;
@@ -194,15 +194,25 @@ namespace OpenUtau.App.ViewModels {
                 });
 
             CursorTool = false;
-            PenTool = true;
-            PenPlusTool = false;
+            if (Preferences.Default.PenPlusDefault) {
+                PenPlusTool = true;
+                PenTool = false;
+            } else {
+                PenTool = true;
+                PenPlusTool = false;
+            }
             EraserTool = false;
             DrawPitchTool = false;
             KnifeTool = false;
             SelectToolCommand = ReactiveCommand.Create<string>(index => {
                 CursorTool = index == "1";
-                PenTool = index == "2";
-                PenPlusTool = index == "2+";
+                if (Preferences.Default.PenPlusDefault) {
+                    PenPlusTool = index == "2";
+                    PenTool = index == "2+";
+                } else {
+                    PenTool = index == "2";
+                    PenPlusTool = index == "2+";
+                }
                 EraserTool = index == "3";
                 DrawPitchTool = index == "4";
                 KnifeTool = index == "5";
@@ -823,7 +833,10 @@ namespace OpenUtau.App.ViewModels {
                     Selection.Select(notes);
                     MessageBus.Current.SendMessage(new NotesSelectionEvent(Selection));
 
-                    TickOffset = left - Part.position;
+                    var note = notes.First();
+                    if (left < TickOffset || TickOffset + ViewportTicks < note.position + note.duration + Part.position) {
+                        TickOffset = Math.Clamp(note.position + note.duration * 0.5 - ViewportTicks * 0.5, 0, HScrollBarMax);
+                    }
                 }
             }
         }
@@ -868,7 +881,7 @@ namespace OpenUtau.App.ViewModels {
                                     break;
                                 default:
                                     if (vm.Params[i].IsSelected) {
-                                        float[] values = copyNote.GetExpression(Project, track, vm.Params[i].Abbr).Select(t => t.Item1).ToArray();
+                                        float?[] values = copyNote.GetExpressionNoteHas(Project, track, vm.Params[i].Abbr);
                                         DocManager.Inst.ExecuteCmd(new SetNoteExpressionCommand(Project, track, Part, note, vm.Params[i].Abbr, values));
                                     }
                                     break;
@@ -908,7 +921,7 @@ namespace OpenUtau.App.ViewModels {
         }
 
         private void FocusNote(UNote note) {
-            TickOffset = TickOffset = Math.Clamp(note.position + note.duration * 0.5 - ViewportTicks * 0.5, 0, HScrollBarMax);
+            TickOffset = Math.Clamp(note.position + note.duration * 0.5 - ViewportTicks * 0.5, 0, HScrollBarMax);
             TrackOffset = Math.Clamp(ViewConstants.MaxTone - note.tone + 2 - ViewportTracks * 0.5, 0, VScrollBarMax);
         }
 
