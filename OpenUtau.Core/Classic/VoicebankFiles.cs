@@ -48,6 +48,7 @@ namespace OpenUtau.Classic {
             string tempFrqExt = tempExt.Replace('.', '_') + ".frq";
             return new List<Tuple<string, string>>() {
                 Tuple.Create(noExt + frqExt, tempNoExt + tempFrqExt),
+                Tuple.Create(source + ".llsm2", sourceTemp + ".llsm2"),
                 Tuple.Create(source + ".llsm", sourceTemp + ".llsm"),
                 Tuple.Create(source + ".uspec", sourceTemp + ".uspec"),
                 Tuple.Create(source + ".dio", sourceTemp + ".dio"),
@@ -60,7 +61,7 @@ namespace OpenUtau.Classic {
                 Tuple.Create(noExt + ".sc.npz", tempNoExt + ".sc.npz"),
                 Tuple.Create(noExt + ".sc", tempNoExt + ".sc"),
                 Tuple.Create(noExt + ".hifi.npz", tempNoExt + ".hifi.npz"),
-                //Tuple.Create(noExt + ".lessaudio", tempNoExt + ".lessaudio"),
+                Tuple.Create(noExt + ".lessaudio", tempNoExt + ".lessaudio"),
             };
         }
 
