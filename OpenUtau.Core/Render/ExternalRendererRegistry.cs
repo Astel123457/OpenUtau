@@ -137,7 +137,7 @@ namespace OpenUtau.Core.Render {
             RendererLoadContext loadContext = null;
             try {
                 loadContext = new RendererLoadContext(path);
-                var assembly = loadContext.LoadFromAssemblyPath(Path.GetFullPath(path));
+                var assembly = loadContext.LoadPluginAssembly(path);
                 foreach (var type in assembly.GetExportedTypes()) {
                     var attribute = type.GetCustomAttribute<ExternalRendererAttribute>();
                     if (attribute == null || type.IsAbstract
@@ -520,7 +520,7 @@ namespace OpenUtau.Core.Render {
             }
             var loadContext = new RendererLoadContext(assemblyPath);
             try {
-                var assembly = loadContext.LoadFromAssemblyPath(assemblyPath);
+                var assembly = loadContext.LoadPluginAssembly(assemblyPath);
                 var type = assembly.GetType(descriptor.TypeName ?? bridge.type, throwOnError: true)!;
                 if (Activator.CreateInstance(type) is not IOpenUtauRendererPlugin plugin) {
                     throw new InvalidCastException(
@@ -652,6 +652,14 @@ namespace OpenUtau.Core.Render {
 
             public RendererLoadContext(string pluginPath) : base(isCollectible: true) {
                 resolver = new AssemblyDependencyResolver(pluginPath);
+            }
+
+            public Assembly LoadPluginAssembly(string path) {
+                // Loading from a path keeps the bridge DLL locked on Windows until
+                // the collectible context is finalized. A stream preserves normal
+                // dependency resolution while allowing immediate plugin updates.
+                using var stream = new MemoryStream(File.ReadAllBytes(Path.GetFullPath(path)), writable: false);
+                return LoadFromStream(stream);
             }
 
             protected override Assembly Load(AssemblyName assemblyName) {
