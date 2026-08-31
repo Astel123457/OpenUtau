@@ -207,6 +207,7 @@ namespace OpenUtau.Core.Render {
                                 ns == typeof(ExternalRendererAttribute).Namespace) {
                             return true;
                         }
+                    }
                 }
                 return false;
             } catch (BadImageFormatException) {
