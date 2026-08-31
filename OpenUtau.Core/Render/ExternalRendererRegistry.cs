@@ -194,15 +194,19 @@ namespace OpenUtau.Core.Render {
                             owner = reader.GetMethodDefinition(
                                 (MethodDefinitionHandle)attribute.Constructor).GetDeclaringType();
                         }
-                        string name = owner.Kind switch {
-                            HandleKind.TypeReference => reader.GetString(
-                                reader.GetTypeReference((TypeReferenceHandle)owner).Name),
-                            HandleKind.TypeDefinition => reader.GetString(
-                                reader.GetTypeDefinition((TypeDefinitionHandle)owner).Name),
-                            _ => string.Empty,
+                        (string name, string ns) = owner.Kind switch {
+                            HandleKind.TypeReference => (
+                                reader.GetString(reader.GetTypeReference((TypeReferenceHandle)owner).Name),
+                                reader.GetString(reader.GetTypeReference((TypeReferenceHandle)owner).Namespace)),
+                            HandleKind.TypeDefinition => (
+                                reader.GetString(reader.GetTypeDefinition((TypeDefinitionHandle)owner).Name),
+                                reader.GetString(reader.GetTypeDefinition((TypeDefinitionHandle)owner).Namespace)),
+                            _ => (string.Empty, string.Empty),
                         };
-                        if (name == nameof(ExternalRendererAttribute)) return true;
-                    }
+                        if (name == nameof(ExternalRendererAttribute) &&
+                                ns == typeof(ExternalRendererAttribute).Namespace) {
+                            return true;
+                        }
                 }
                 return false;
             } catch (BadImageFormatException) {
