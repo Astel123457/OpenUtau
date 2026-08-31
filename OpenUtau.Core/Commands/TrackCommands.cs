@@ -154,12 +154,14 @@ namespace OpenUtau.Core {
         }
         public override string ToString() { return "Change render setting"; }
         public override void Execute() {
-            track.RendererSettings = newSettings.Clone();
-            track.RendererSettings.Validate(track);
+            var settings = newSettings.Clone();
+            settings.Validate(track, fallbackUnavailableRenderer: false);
+            track.RendererSettings = settings;
         }
         public override void Unexecute() {
-            track.RendererSettings = oldSettings.Clone();
-            track.RendererSettings.Validate(track);
+            var settings = oldSettings.Clone();
+            settings.Validate(track);
+            track.RendererSettings = settings;
         }
     }
 }

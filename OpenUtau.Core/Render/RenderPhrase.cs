@@ -491,7 +491,7 @@ namespace OpenUtau.Core.Render {
             using (var stream = new MemoryStream()) {
                 using (var writer = new BinaryWriter(stream)) {
                     writer.Write(singer.Id);
-                    writer.Write(renderer?.ToString() ?? "");
+                    writer.Write(renderer == null ? "" : Renderers.GetRendererId(renderer));
                     writer.Write(wavtool ?? "");
                     writer.Write(timeAxis.Timestamp);
                     foreach (var phone in phones) {

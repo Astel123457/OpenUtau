@@ -16,8 +16,9 @@ namespace OpenUtau.Core.Ustx {
         [YamlIgnore] public IRenderer Renderer { get; set; }
         [YamlIgnore] public IResampler Resampler { get; set; }
         [YamlIgnore] public IWavtool Wavtool { get; set; }
+        [YamlIgnore] public string RendererLoadError { get; private set; }
 
-        public void Validate(UTrack track) {
+        public void Validate(UTrack track, bool fallbackUnavailableRenderer = true) {
             if (track.Singer == null || !track.Singer.Found) {
                 renderer = null;
                 Renderer = null;
@@ -25,15 +26,42 @@ namespace OpenUtau.Core.Ustx {
                 Resampler = null;
                 wavtool = null;
                 Wavtool = null;
+                RendererLoadError = null;
                 return;
             }
             if (string.IsNullOrEmpty(renderer)) {
                 renderer = Renderers.GetDefaultRenderer(track.Singer.SingerType);
             }
-            if (renderer != Renderer?.ToString()) {
-                Renderer = Renderers.CreateRenderer(renderer);
+            if (!Renderers.IsRenderer(renderer, Renderer)) {
+                var requestedRenderer = renderer;
+                IRenderer nextRenderer;
+                try {
+                    nextRenderer = Renderers.CreateRenderer(requestedRenderer);
+                    if (nextRenderer == null) {
+                        throw new KeyNotFoundException(
+                            $"Renderer '{requestedRenderer}' is not installed.");
+                    }
+                    RendererLoadError = null;
+                } catch (Exception exception) {
+                    if (!fallbackUnavailableRenderer) throw;
+                    RendererLoadError = exception.Message;
+                    Log.Warning(exception,
+                        "Renderer {RendererId} is unavailable; using the default renderer for this session.",
+                        requestedRenderer);
+                    var fallback = Renderers.GetDefaultRenderer(track.Singer.SingerType);
+                    nextRenderer = Renderers.CreateRenderer(fallback)
+                        ?? throw new InvalidOperationException(
+                            $"Default renderer '{fallback}' could not be created.", exception);
+                }
+                if (Renderer is IDisposable disposable) {
+                    disposable.Dispose();
+                }
+                Renderer = nextRenderer;
+                if (RendererLoadError == null) {
+                    renderer = Renderers.GetRendererId(Renderer);
+                }
             }
-            if (renderer == Renderers.CLASSIC) {
+            if (Renderers.GetRendererId(Renderer) == Renderers.CLASSIC) {
                 if (string.IsNullOrEmpty(resampler)) {
                     if (!Util.Preferences.Default.DefaultResamplers.TryGetValue(renderer, out resampler)) {
                         resampler = null;
