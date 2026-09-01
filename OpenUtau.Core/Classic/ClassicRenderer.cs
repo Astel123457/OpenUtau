@@ -56,7 +56,9 @@ namespace OpenUtau.Classic {
             };
         }
 
-        public Task<RenderResult> Render(RenderPhrase phrase, Progress progress, int trackNo, CancellationTokenSource cancellation, bool isPreRender) {
+        public Task<RenderResult> Render(RenderPhrase phrase, Progress progress, int trackNo,
+                CancellationTokenSource cancellation, bool isPreRender,
+                RenderPhraseEvents? renderEvents = null) {
             if (resamplerOverride != null || phrase.wavtool == SharpWavtool.nameConvergence || phrase.wavtool == SharpWavtool.nameSimple) {
                 return RenderInternal(phrase, progress, trackNo, cancellation, isPreRender);
             } else {

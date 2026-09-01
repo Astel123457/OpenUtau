@@ -509,7 +509,8 @@ public sealed class TestRenderer : IRenderer {
     public bool SupportsExpression(UExpressionDescriptor descriptor) => false;
     public RenderResult Layout(RenderPhrase phrase) => new();
     public Task<RenderResult> Render(RenderPhrase phrase, Progress progress, int trackNo,
-        CancellationTokenSource cancellation, bool isPreRender = false) =>
+        CancellationTokenSource cancellation, bool isPreRender = false,
+        RenderPhraseEvents renderEvents = null) =>
         Task.FromResult(new RenderResult { samples = Array.Empty<float>() });
     public RenderPitchResult LoadRenderedPitch(RenderPhrase phrase) => null;
     public UExpressionDescriptor[] GetSuggestedExpressions(USinger singer, URenderSettings renderSettings) =>

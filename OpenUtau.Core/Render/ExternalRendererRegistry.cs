@@ -575,7 +575,8 @@ namespace OpenUtau.Core.Render {
                 renderer.SupportsExpression(expression);
             public RenderResult Layout(RenderPhrase phrase) => renderer.Layout(phrase);
             public async Task<RenderResult> Render(RenderPhrase phrase, Progress progress, int trackNo,
-                    CancellationTokenSource cancellation, bool isPreRender = false) {
+                    CancellationTokenSource cancellation, bool isPreRender = false,
+                    RenderPhraseEvents? renderEvents = null) {
                 cancellation.Token.ThrowIfCancellationRequested();
                 if (renderSlots != null) await renderSlots.WaitAsync(cancellation.Token);
                 try {
@@ -589,7 +590,8 @@ namespace OpenUtau.Core.Render {
                     } finally {
                         analysisLock.Release();
                     }
-                    var result = await renderer.Render(phrase, progress, trackNo, cancellation, isPreRender);
+                    var result = await renderer.Render(
+                        phrase, progress, trackNo, cancellation, isPreRender, renderEvents);
                     cancellation.Token.ThrowIfCancellationRequested();
                     return result;
                 } finally {
@@ -597,7 +599,12 @@ namespace OpenUtau.Core.Render {
                 }
             }
             public RenderPitchResult LoadRenderedPitch(RenderPhrase phrase) => renderer.LoadRenderedPitch(phrase);
+            public RenderPitchResult LoadRenderedPitch(
+                RenderPhrase phrase, HashSet<int> selectedNotePositions) =>
+                renderer.LoadRenderedPitch(phrase, selectedNotePositions);
             public List<RenderRealCurveResult> LoadRenderedRealCurves(RenderPhrase phrase) => renderer.LoadRenderedRealCurves(phrase);
+            public void ScheduleRealCurveRefresh(UProject project, UVoicePart part, UCommand command) =>
+                renderer.ScheduleRealCurveRefresh(project, part, command);
             public UExpressionDescriptor[] GetSuggestedExpressions(USinger singer, URenderSettings settings) {
                 var declared = descriptor.Metadata.Expressions.Values.ToDictionary(
                     expression => expression.abbr, StringComparer.OrdinalIgnoreCase);
