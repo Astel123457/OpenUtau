@@ -644,6 +644,7 @@
   <system:String x:Key="prefs.rendering.diffsingerstepsvariance">DiffSinger 音色渲染步数</system:String>
   <system:String x:Key="prefs.rendering.diffsingervariancelocalpitchpatch">音高编辑时的 DiffSinger 局部音色更新</system:String>
   <system:String x:Key="prefs.rendering.gamebackend">GAME 推理后端</system:String>
+  <system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSinger 音高局部重录</system:String>
   <system:String x:Key="prefs.rendering.onnxgpu">GPU</system:String>
   <system:String x:Key="prefs.rendering.onnxrunner">机器学习运行器</system:String>
   <system:String x:Key="prefs.rendering.phasecomp">相位修正</system:String>
