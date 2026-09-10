@@ -204,6 +204,7 @@ namespace OpenUtau.Core.Ustx {
             if (Singer != null && Singer.Found) {
                 Singer.EnsureLoaded();
             }
+            Pipeline.DocumentSnapshotStore.Inst.SetTrack(this);
             if (RendererSettings == null) {
                 RendererSettings = new URenderSettings();
             }
