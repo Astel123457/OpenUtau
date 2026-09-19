@@ -7,12 +7,13 @@
         xmlns:c="clr-namespace:OpenUtau.App.Controls"
         mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="650"
         x:Class="OpenUtau.App.Controls.PianoRoll" Focusable="True"
+        x:DataType="vm:PianoRollViewModel"
         Background="Transparent" GotFocus="OnPianoRollFocus">
   <UserControl.Styles>
     <StyleInclude Source="/Styles/PianoRollStyles.axaml"/>
   </UserControl.Styles>
   <Border>
-    <Grid Margin="{Binding $parent[1].OffScreenMargin}" PointerMoved="BackgroundPointerMoved">
+    <Grid Margin="{Binding $parent[Window].OffScreenMargin}" PointerMoved="BackgroundPointerMoved">
       <Grid.RowDefinitions>
         <RowDefinition Height="24"/>
         <RowDefinition Height="24"/>
@@ -183,7 +184,7 @@
           <ContextMenu ItemsSource="{Binding NotesContextMenuItems}"
                        Opening="NotesContextMenuOpening">
             <ContextMenu.Styles>
-              <Style Selector="MenuItem">
+              <Style Selector="MenuItem" x:DataType="vm:MenuItemViewModel">
                 <Setter Property="Header" Value="{Binding Header}"/>
                 <Setter Property="Command" Value="{Binding Command, FallbackValue={x:Null}}"/>
                 <Setter Property="CommandParameter" Value="{Binding CommandParameter}"/>
@@ -657,10 +658,14 @@
             </ItemsPanelTemplate>
         </ListBox.ItemsPanel>
         <ListBox.Items>
-          <ListBoxItem Classes="toolbar cursorTool"/>
-          <ListBoxItem Classes="toolbar penTool"/>
-          <!-- CurveLineTool -->
-          <ListBoxItem Classes="toolbar eraserTool"/>
+          <ListBoxItem Classes="toolbar cursorTool" ToolTip.Tip="{DynamicResource pianoroll.tool.curve.cursor}"/>
+          <ListBoxItem Classes="toolbar penTool" ToolTip.Tip="{DynamicResource pianoroll.tool.curve.pen}"/>
+          <ListBoxItem Classes="toolbar pitchLineTool" ToolTip.Tip="{DynamicResource pianoroll.tool.curve.line}"/>
+          <ListBoxItem Classes="toolbar eraserTool" ToolTip.Tip="{DynamicResource pianoroll.tool.curve.eraser}"/>
+          <ListBoxItem Classes="toolbar verticalStretchTool" ToolTip.Tip="{DynamicResource pianoroll.tool.curve.verticalstretch}"/>
+          <ListBoxItem Classes="toolbar horizontalStretchTool" ToolTip.Tip="{DynamicResource pianoroll.tool.curve.horizontalstretch}"/>
+          <ListBoxItem Classes="toolbar verticalShiftTool" ToolTip.Tip="{DynamicResource pianoroll.tool.curve.verticalshift}"/>
+          <ListBoxItem Classes="toolbar horizontalShiftTool" ToolTip.Tip="{DynamicResource pianoroll.tool.curve.horizontalshift}"/>
         </ListBox.Items>
       </ListBox>
       <TextBlock Classes="tips" Grid.Row="5" Grid.Column="1"

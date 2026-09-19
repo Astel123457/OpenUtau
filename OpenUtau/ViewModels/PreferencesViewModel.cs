@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -138,7 +138,6 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool DiffSingerTensorCache { get; set; }
         [Reactive] public partial bool DiffSingerVarianceLocalPitchPatch { get; set; }
         [Reactive] public partial bool DiffSingerLangCodeHide { get; set; }
-        [Reactive] public partial bool DiffSingerLocalRetaking { get; set; }
 
         // Advanced
         [Reactive] public partial bool RememberMid { get; set; }
@@ -146,6 +145,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool RememberVsqx { get; set; }
         [Reactive] public partial bool Wayland { get; set; }
         public string WinePath => Preferences.Default.WinePath;
+        [Reactive] public partial bool DefaultSnapCurve { get; set; }
 
         private readonly ObservableAsPropertyHelper<bool> highThreads;
         private readonly ObservableAsPropertyHelper<bool> showOnnxGpu;
@@ -156,7 +156,7 @@ namespace OpenUtau.App.ViewModels {
         // means every subscription below would call Preferences.Save() once during
         // construction with the value that was just loaded from disk - Skip(1) drops
         // that redundant initial emission and keeps only real changes.
-        void PersistOn<T>(IObservable<T> source, Action<T> assign) {
+        void PersistOn<T>(IObservable<T> source, Action<T> assign) where T : notnull {
             source.Skip(1).Subscribe(v => {
                 assign(v);
                 Preferences.Save();
@@ -221,7 +221,6 @@ namespace OpenUtau.App.ViewModels {
             DiffSingerTensorCache = Preferences.Default.DiffSingerTensorCache;
             DiffSingerVarianceLocalPitchPatch = Preferences.Default.DiffSingerVarianceLocalPitchPatch;
             DiffSingerLangCodeHide = Preferences.Default.DiffSingerLangCodeHide;
-            DiffSingerLocalRetaking = Preferences.Default.DiffSingerLocalRetaking;
             SkipRenderingMutedTracks = Preferences.Default.SkipRenderingMutedTracks;
             ThemeName = Preferences.Default.ThemeName;
             DegreeStyle = Preferences.Default.DegreeStyle;
@@ -244,6 +243,7 @@ namespace OpenUtau.App.ViewModels {
             RememberMid = Preferences.Default.RememberMid;
             RememberUst = Preferences.Default.RememberUst;
             RememberVsqx = Preferences.Default.RememberVsqx;
+            DefaultSnapCurve = Preferences.Default.DefaultSnapCurve;
             ClearCacheOnQuit = Preferences.Default.ClearCacheOnQuit;
             Wayland = Preferences.Default.UseWayland;
 
@@ -427,6 +427,8 @@ namespace OpenUtau.App.ViewModels {
                 value => Preferences.Default.RememberUst = value);
             PersistOn(this.WhenAnyValue(vm => vm.RememberVsqx),
                 value => Preferences.Default.RememberVsqx = value);
+            PersistOn(this.WhenAnyValue(vm => vm.DefaultSnapCurve),
+                value => Preferences.Default.DefaultSnapCurve = value);
             PersistOn(this.WhenAnyValue(vm => vm.ClearCacheOnQuit),
                 value => Preferences.Default.ClearCacheOnQuit = value);
             PersistOn(this.WhenAnyValue(vm => vm.DiffSingerSteps),
@@ -443,8 +445,6 @@ namespace OpenUtau.App.ViewModels {
                 value => Preferences.Default.DiffSingerVarianceLocalPitchPatch = value);
             PersistOn(this.WhenAnyValue(vm => vm.DiffSingerLangCodeHide),
                 value => Preferences.Default.DiffSingerLangCodeHide = value);
-            PersistOn(this.WhenAnyValue(vm => vm.DiffSingerLocalRetaking),
-                value => Preferences.Default.DiffSingerLocalRetaking = value);
             PersistOn(this.WhenAnyValue(vm => vm.SkipRenderingMutedTracks),
                 skipRenderingMutedTracks => Preferences.Default.SkipRenderingMutedTracks = skipRenderingMutedTracks);
         }
