@@ -509,6 +509,25 @@ namespace OpenUtau.Core.Pipeline {
                 groups.Select(g => (g.Item1, g.Item2)).ToArray());
         }
 
+        // The musical notes of a phrase, including extension notes but not pitch-context neighbors.
+        internal List<int> PhraseNotes(int start, int end) {
+            var result = new List<int> { Phonemes[start].NoteIndex };
+            int last = Phonemes[end - 1].NoteIndex;
+            while (Notes[last].Next != -1 && Notes[Notes[last].Next].Extends != -1) {
+                last = Notes[last].Next;
+            }
+            while (result.Last() != last) {
+                result.Add(Notes[result.Last()].Next);
+            }
+            int tail = result.Last();
+            int next = Notes[tail].Next;
+            while (next != -1 && Notes[next].Extends == tail) {
+                result.Add(next);
+                next = Notes[next].Next;
+            }
+            return result;
+        }
+
         public RenderPhrase[] BuildPhrases() {
             var phonemes = DrivenPhonemes();
             var phrases = new RenderPhrase[PhraseGroups.Length];
