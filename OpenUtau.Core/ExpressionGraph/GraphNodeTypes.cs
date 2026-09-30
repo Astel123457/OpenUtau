@@ -507,14 +507,15 @@ namespace OpenUtau.Core.ExpressionGraph {
         }
 
         // Local evaluation state only, like Smooth. A changed target restarts the transition
-        // from the last output; zero speed holds it. Cubic means monotone 1-D smoothstep,
-        // not bicubic interpolation (which is a surface operation).
+        // from the last output, preserving cubic velocity for moving targets. Zero speed holds it.
+        // Cubic uses monotone Hermite easing, not bicubic interpolation (a surface operation).
         static float[] SlewValues(NodeArgs a) {
             var input = a.Inputs[0];
             var result = new float[input.Length];
             if (result.Length == 0) return result;
             bool cubic = a.Node.GetString("easing") == "cubic";
             double start = input[0], target = input[0], progress = 1;
+            double velocity = 0, tangent = 0;
             result[0] = input[0];
             for (int i = 1; i < result.Length; i++) {
                 double speed = a.Inputs[1][i];
@@ -523,14 +524,22 @@ namespace OpenUtau.Core.ExpressionGraph {
                     start = result[i - 1];
                     target = input[i];
                     progress = 0;
+                    // A normalized Hermite tangent in [0, 1.5] remains monotone and has
+                    // derivative <= 1.5. Keep motion toward a moving target rather than
+                    // restarting from smoothstep's zero-velocity endpoint each sample.
+                    tangent = speed > 0 ? Math.Clamp(velocity * Math.Sign(target - start) * 1.5 / speed, 0, 1.5) : 0;
                 }
                 double dt = Math.Max(0, a.Context.Axis.TickPosToMsPos(a.Context.PartPosition + a.Ticks[i])
                     - a.Context.Axis.TickPosToMsPos(a.Context.PartPosition + a.Ticks[i - 1])) / 1000;
                 double distance = Math.Abs(target - start);
                 // Cubic smoothstep's maximum slope is 1.5; scale duration so speed remains a hard limit.
                 progress = distance == 0 ? 1 : Math.Min(1, progress + dt * speed / (distance * (cubic ? 1.5 : 1)));
-                double t = cubic ? progress * progress * (3 - 2 * progress) : progress;
+                double t = cubic ? progress * progress * (3 - 2 * progress)
+                    + tangent * progress * (1 - progress) * (1 - progress) : progress;
                 result[i] = (float)(start + (target - start) * t);
+                double slope = cubic ? 6 * progress * (1 - progress)
+                    + tangent * (1 - 4 * progress + 3 * progress * progress) : 1;
+                velocity = progress >= 1 ? 0 : Math.Sign(target - start) * speed * slope / (cubic ? 1.5 : 1);
             }
             return result;
         }

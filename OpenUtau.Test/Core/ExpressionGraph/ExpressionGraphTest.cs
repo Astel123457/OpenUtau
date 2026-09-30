@@ -12,6 +12,56 @@ namespace OpenUtau.Core.ExpressionGraph {
         const string Renderer = "TEST";
 
         [Fact]
+        public void PhraseIndexIsLazyAndShared() {
+            var (project, track, part) = Fixture(null);
+            var source = PhraseSource.FromPart(project, track, part, 0);
+            var contexts = source.PhraseGroups.Select(g => new GraphContext(source, phraseStart: g.Start)).ToArray();
+            Assert.False(source.PhraseNoteIndex.IsValueCreated);
+            Parallel.ForEach(contexts, context => context.PhraseNoteAt(0));
+            Assert.True(source.PhraseNoteIndex.IsValueCreated);
+            var index = source.PhraseNoteIndex.Value;
+            foreach (var context in contexts) {
+                context.PhraseNoteAt(1200);
+                Assert.Same(index, source.PhraseNoteIndex.Value);
+            }
+            var other = PhraseSource.FromPart(project, track, part, 0);
+            Assert.False(other.PhraseNoteIndex.IsValueCreated);
+            Assert.NotSame(index, other.PhraseNoteIndex.Value);
+        }
+
+        [Theory]
+        [InlineData("10")]
+        [InlineData("-10")]
+        public void CubicFollowsMovingTargets(string slope) {
+            var graph = Graph(new[] {
+                Node(1, GraphNodeTypes.Time),
+                Node(2, GraphNodeTypes.Multiply, ("b", slope)),
+                Node(3, GraphNodeTypes.Slew, ("speed", "2"), ("easing", "cubic")),
+                Node(4, GraphNodeTypes.CurveOutput, ("abbr", "tenc")),
+            }, Link(1, 2, "a"), Link(2, 3), Link(3, 4));
+            var (project, track, part) = Fixture(graph);
+            part.position = 0;
+            var context = new GraphContext(PhraseSource.FromPart(project, track, part, 0));
+            float[] Run(int step) {
+                var ticks = Enumerable.Range(0, 960 / step + 1).Select(i => i * step).ToArray();
+                var values = Evaluate(graph, project, track, part, ticks)["tenc"];
+                for (int i = 1; i < values.Length; i++) {
+                    double dt = (context.Axis.TickPosToMsPos(ticks[i]) - context.Axis.TickPosToMsPos(ticks[i - 1])) / 1000;
+                    Assert.InRange(Math.Abs(values[i] - values[i - 1]), 0, 2 * dt + 0.000001);
+                }
+                return values;
+            }
+            var coarse = Run(10);
+            var fine = Run(1);
+            double seconds = context.Axis.TickPosToMsPos(960) / 1000;
+            Assert.InRange(Math.Abs(fine.Last()), seconds, 2 * seconds + 0.00001);
+            // Retargeting is sampled, so trajectories need not match exactly, but a
+            // tenfold denser grid must stay within 10% of the maximum travel, not freeze.
+            Assert.InRange(Math.Abs(coarse.Last() - fine.Last()), 0, 0.1 * 2 * seconds);
+            Assert.Equal(fine, Run(1));
+        }
+
+        [Fact]
         public void PhraseCounterResetsAndCountsExtensionNotes() {
             var graph = Graph(new[] {
                 Node(1, GraphNodeTypes.PhraseNotes),

@@ -50,7 +50,6 @@ namespace OpenUtau.Core.ExpressionGraph {
         readonly Dictionary<string, int> defaults;
         readonly NoteSource[] notes;
         readonly PhraseSource? phraseSource;
-        readonly int[][] phraseNotes = Array.Empty<int[]>();
         readonly int activePhrase = -1;
 
         public GraphContext(TimeAxis axis, int partPosition, int resolution,
@@ -75,13 +74,22 @@ namespace OpenUtau.Core.ExpressionGraph {
             : this(source.Axis, source.PartPosition, source.Resolution, source.Curves, source.CurveDefaults, source.Notes,
                 source.PhonemeAnchors, pitch, source.MaskedCurves) {
             phraseSource = source;
-            phraseNotes = source.PhraseGroups.Select(g => source.PhraseNotes(g.Start, g.End).ToArray()).ToArray();
-            activePhrase = Array.FindIndex(source.PhraseGroups, g => g.Start == phraseStart);
+            if (phraseStart.HasValue) {
+                int lo = 0, hi = source.PhraseGroups.Length - 1;
+                while (lo <= hi) {
+                    int mid = lo + (hi - lo) / 2;
+                    int start = source.PhraseGroups[mid].Start;
+                    if (start == phraseStart.Value) { activePhrase = mid; break; }
+                    if (start < phraseStart.Value) lo = mid + 1;
+                    else hi = mid - 1;
+                }
+            }
         }
 
         // Per-phoneme evaluation uses ownership rather than onset time (consonants can precede notes).
         public (int index, int count) PhraseNoteAt(int tick, int? phonemeIndex = null) {
             if (phraseSource == null) return (-1, 0);
+            var phraseNotes = phraseSource.PhraseNoteIndex.Value;
             int group = activePhrase;
             int note = NoteAt(tick)?.Index ?? -1;
             if (phonemeIndex is int p && p >= 0 && p < phraseSource.Phonemes.Length) {

@@ -399,6 +399,8 @@ namespace OpenUtau.Core.Pipeline {
         public readonly PhonemeSource[] Phonemes;
         /// <summary>Half-open [start, end) index ranges into <see cref="Phonemes"/>.</summary>
         public readonly (int Start, int End)[] PhraseGroups;
+        // Shared by graph contexts for this immutable snapshot; unused graphs pay no indexing cost.
+        internal readonly Lazy<int[][]> PhraseNoteIndex;
 
         internal PhraseSource(
                 PartId partId, DocRevision revision, long generation,
@@ -466,6 +468,8 @@ namespace OpenUtau.Core.Pipeline {
                     Axis, part.position, track, project, Resampler, XsyAvailable, graphExpressions);
             }
             PhraseGroups = groups;
+            PhraseNoteIndex = new Lazy<int[][]>(() => PhraseGroups
+                .Select(g => PhraseNotes(g.Start, g.End).ToArray()).ToArray());
             if (ExpressionGraph != null) {
                 // Options expressions are indices, not values; the graph neither reads nor drives them.
                 var numerical = graphExpressions!.Where(d => d.type == UExpressionType.Numerical).Select(d => d.abbr);
